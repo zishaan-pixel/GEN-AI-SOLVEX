@@ -39,8 +39,8 @@ OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
 PLACEHOLDER_KEYS = {"", "your_openrouter_api_key_here", "sk-or-v1-your-key-here"}
 
 CURATED_MODELS: Dict[str, str] = {
-    "OpenRouter Auto (Best Available)": "openrouter/auto",
     "GPT-4o Mini (Fast & Accurate)": "openai/gpt-4o-mini",
+    "OpenRouter Auto (Best Available)": "openrouter/auto",
     "GPT-4o (Flagship Reasoning)": "openai/gpt-4o",
     "Claude 3.5 Sonnet (Coding & Analysis)": "anthropic/claude-3.5-sonnet",
     "Gemini 2.0 Flash (Fast & Grounded)": "google/gemini-2.0-flash-001",
@@ -50,9 +50,9 @@ CURATED_MODELS: Dict[str, str] = {
 }
 
 FALLBACK_MODELS: List[str] = [
-    "openrouter/auto",
     "openai/gpt-4o-mini",
     "google/gemini-2.0-flash-001",
+    "meta-llama/llama-3.3-70b-instruct:free",
 ]
 
 STARTER_PROMPTS: List[Tuple[str, str]] = [
@@ -345,10 +345,12 @@ def stream_with_fallback(
             first_chunk = next(stream_iter, None)
 
             def _gen(first: Any, rest: Any) -> Generator[str, None, None]:
-                if first is not None and getattr(first, "content", ""):
-                    yield str(first.content)
+                if first is not None:
+                    text = getattr(first, "content", None) or ""
+                    if text:
+                        yield str(text)
                 for chunk in rest:
-                    text = getattr(chunk, "content", "")
+                    text = getattr(chunk, "content", None) or ""
                     if text:
                         yield str(text)
 
@@ -577,7 +579,7 @@ def main() -> None:
         st.divider()
         st.markdown("### Model & Accuracy")
 
-        default_env_model = get_config("OPENROUTER_DEFAULT_MODEL", "openrouter/auto")
+        default_env_model = get_config("OPENROUTER_DEFAULT_MODEL", "openai/gpt-4o-mini")
         model_labels = list(CURATED_MODELS.keys())
         default_index = 0
         for idx, lbl in enumerate(model_labels):
